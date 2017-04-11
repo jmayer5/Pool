@@ -1224,8 +1224,7 @@
 }
       
       function calculateAndDisplayRoute(directionsService, directionsDisplay, directionsServiceNoStop) {
-        //var best = findShortestRoute();
-        var best = 10;
+        var best = findShortestRoute();
         var waypts = [];
         var info = getData();
         var name = document.getElementById('startAddress').value;
@@ -1300,6 +1299,9 @@
         }
         var originAddress = data[1][nameID];  	   
       	
+      	var directionsServiceIter = new google.maps.DirectionsService();
+		var directionsServiceNoStopIter = new google.maps.DirectionsService();
+       
       	for (var count = 0; count<data[0].length; count++) {
       		if (name == data[0][count]) {
       			count++;
@@ -1312,8 +1314,6 @@
         	});
 			
 			var timeDif = 0;
-			var directionsServiceIter = new google.maps.DirectionsService();
-			var directionsServiceNoStopIter = new google.maps.DirectionsService();
 			
 			directionsServiceIter.route({
 			  origin: originAddress,
