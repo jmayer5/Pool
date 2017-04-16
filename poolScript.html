@@ -70,7 +70,7 @@
         var directionsServiceNoStop = new google.maps.DirectionsService;
         var map = new google.maps.Map(document.getElementById('map'), {
           zoom: 10,
-          center: {lat: 40.734750, lng: -74.309846}
+          center: {lat: 40.734750, lng: -74.709846}
         });
         directionsDisplay.setMap(map);
 		
@@ -1223,136 +1223,99 @@
 			return arr;
 }
       
-      function calculateAndDisplayRoute(directionsService, directionsDisplay, directionsServiceNoStop) {
-        var best = findShortestRoute();
-        var waypts = [];
-        var info = getData();
-        var name = document.getElementById('startAddress').value;
-        var id = 0;
-        for (var count = 0; count<info[0].length; count++) {
-        	if (info[0][count] == name) {
-        		id = count;
-        		count = info[0].length;
-        	}
-        }
-        var start = info[1][id];
-        var stopover = info[1][best];
-        waypts.push({
-              location: stopover,
-              stopover: true
-        	});
-        
-        var timeDif = 0;
-        
-        directionsServiceNoStop.route({
-          origin: start,
-          destination: document.getElementById('endAddress').value,
-          travelMode: 'DRIVING'
-        }, 
-        function(responseNoStop, statusNoStop) {
-          if (statusNoStop === 'OK') {
-            var noStopRoute = responseNoStop.routes[0];
-            var summaryPanel = document.getElementById('directions-panel');
-            timeDif -= noStopRoute.legs[0].duration.value;  
-          } else {
-            window.alert('Directions request failed due to ' + status);
-            }
-        })
-       
-        directionsService.route({
-          origin: start,
-          destination: document.getElementById('endAddress').value,
-          waypoints: waypts,
-          optimizeWaypoints: true,
-          travelMode: 'DRIVING'
-        },  
-        function(response, status) {
-          if (status === 'OK') {
-            directionsDisplay.setDirections(response);
-            var route = response.routes[0];
-            var summaryPanel = document.getElementById('directions-panel');
-            summaryPanel.innerHTML += "Start:" + '<br>' + route.legs[0].start_address + '<br>';
-            summaryPanel.innerHTML += "Stop:" + '<br>' + route.legs[1].start_address + '<br>';
-            summaryPanel.innerHTML += "Finish:" + '<br>' + route.legs[1].end_address + '<br>';
-            timeDif += route.legs[0].duration.value + route.legs[1].duration.value;
-            summaryPanel.innerHTML += "Added Time For Stopping:" + '<br>' + Math.round(timeDif/60) + " minutes" + '<br>';
-          } else {
-            window.alert('Directions request failed due to ' + status);
-            }
-        })
-         
-        
-      }
-      
-      // not working
-      function findShortestRoute() {
-      	var name = document.getElementById('startAddress').value;
-      	var nameID = 0;
-      	var bestMatchID = 0;
-      	var shortestDistance = 1000000000;
-      	var data = getData();
-      	for (var i = 0; i<data[0].length; i++) {
-        	if (data[0][i] == name) {
-        		nameID = i;
-        		i = data[0].length;
-        	}
-        }
-        var originAddress = data[1][nameID];  	   
-      	
-      	var directionsServiceIter = new google.maps.DirectionsService();
-		var directionsServiceNoStopIter = new google.maps.DirectionsService();
-       
-      	for (var count = 0; count<data[0].length; count++) {
-      		if (name == data[0][count]) {
-      			count++;
-      		}
-      		var stopover = data[1][count];
-      		var waypts = [];
-      		waypts.push({
-              location: stopover,
-              stopover: true
-        	});
-			
-			var timeDif = 0;
-			
-			directionsServiceIter.route({
-			  origin: originAddress,
-			  destination: document.getElementById('endAddress').value,
-			  waypoints: waypts,
-			  optimizeWaypoints: true,
-			  travelMode: 'DRIVING'
-			},  
-			function(response, status) {
-			  if (status === 'OK') {
-				var route = response.routes[0];
-				timeDif += route.legs[0].duration.value + route.legs[1].duration.value;
-			  } else {
-				window.alert('Directions request failed due to ' + status);
+	  function getStop(allStops, j) {
+    	var waypts = [];
+    	waypts.push({
+            location: allStops[j],
+            stopover: true
+        });
+        return waypts;
+    }
+    
+      function findIndexOfSmallest(times, revisedStops, start) {
+  		var smallest;
+  		var indexOfSmallest;
+  		for (var m = 0; m < times.length; m++) {
+    		if (revisedStops[m] != start) {
+    			if (!smallest || times[m] < smallest) {
+      				smallest = times[m];
+      				indexOfSmallest = m;
 				}
-			})
-			
-			directionsServiceNoStopIter.route({
-			  origin: originAddress,
+    		}
+    		    		
+  		}
+  		return indexOfSmallest;
+      } 
+      
+      function showRoute(directionsDisplay, start, stop, finish) {
+    	var directionsService = new google.maps.DirectionsService;
+    	directionsService.route({
+			origin: start,
+			waypoints: stop,
+			destination: finish,
+			travelMode: 'DRIVING'
+		}, 
+		function(response, status) {
+			if (status === 'OK') {
+				directionsDisplay.setDirections(response);
+			} else {
+				window.alert('Directions request failed due to ' + status);
+			  }
+		});
+    }
+
+      function calculateAndDisplayRoute(directionsService, directionsDisplay, directionsServiceNoStop) {
+        var data = getData();
+        var name = document.getElementById('startAddress').value;  
+        
+        var correspondingAddress = 0;
+		for (var k = 0; k<data[0].length; k++) {
+			if (data[0][k] == name) {
+				correspondingAddress = k;
+				k = data[0].length;
+			}
+		}
+		var start = data[1][correspondingAddress];
+       
+        var allStops = [];
+        // change who is included in the list here (i = firstPerson; i<lastPerson; i++)
+        for (var i = 0; i<6; i++) {
+        	if (data[0][i] != name) {
+        		allStops.push(data[1][i]);
+        	}
+        }
+        
+        var allTimes = [];
+        var revisedStops = [];
+        for (var j = 0; j<allStops.length; j++) {
+        	directionsService.route({
+			  origin: start,
+			  waypoints: getStop(allStops, j),
 			  destination: document.getElementById('endAddress').value,
 			  travelMode: 'DRIVING'
 			}, 
-			function(responseNoStop, statusNoStop) {
-			  if (statusNoStop === 'OK') {
-				var noStopRoute = responseNoStop.routes[0];
-				timeDif -= noStopRoute.legs[0].duration.value;  
+			function(response, status) { 
+			  if (status === 'OK') {
+				var route = response.routes[0];
+				allTimes.push((route.legs[0].duration.value + route.legs[1].duration.value)/60);
+				revisedStops.push(route.legs[0].end_address);
+				if (allTimes.length == allStops.length) {
+					start = route.legs[0].start_address
+					var bestMatchID = findIndexOfSmallest(allTimes, revisedStops, start);
+					showRoute(directionsDisplay, start, getStop(revisedStops, bestMatchID), document.getElementById('endAddress').value);
+					var summaryPanel = document.getElementById('directions-panel');
+            		summaryPanel.innerHTML = "Start:" + '<br>' + start + '<br>';
+            		summaryPanel.innerHTML += "Stop:" + '<br>' + revisedStops[bestMatchID] + '<br>';
+            		summaryPanel.innerHTML += "Finish:" + '<br>' + document.getElementById('endAddress').value + '<br>';
+            		summaryPanel.innerHTML += "Total Time For Shortest Route:" + '<br>' + Math.round(allTimes[bestMatchID]) + " Minutes";
+				}
 			  } else {
 				window.alert('Directions request failed due to ' + status);
 				}
-			})
-			
-			if (timeDif < shortestDistance) {
-				shortestDistance = timeDif;
-				bestMatchID = count;
-			}
-      	}
-      	return bestMatchID;
-      }
-   
+			}); 
+        }
+    }
+    
     </script>
     <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAeKWE5ldqR1xPu9igosTquy-mjRQ62iJg&callback=initMap">
