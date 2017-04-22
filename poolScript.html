@@ -65,7 +65,8 @@
     </div>
     <script>
       
-      function initMap() {
+      function initMap() 
+      {
         var directionsService = new google.maps.DirectionsService;
         var directionsDisplay = new google.maps.DirectionsRenderer;
         var directionsServiceNoStop = new google.maps.DirectionsService;
@@ -1253,9 +1254,10 @@
 	//console.log(BRaddresses);
 	var BRarr = [BRnames, BRaddresses, BRgrades];
 	var SHarr = [SHnames, SHaddresses, SHgrades];
+	var bigArr = [SHarr, BRarr];
 	console.log(SHarr);
 	console.log(BRarr)
-	return BRarr;
+	return bigArr;
 	//document.write(addresses);
 }
       
@@ -1308,8 +1310,19 @@
     }
 
       function calculateAndDisplayRoute(directionsService, directionsDisplay, directionsServiceNoStop) {
-        var data = allList();
-        /*
+        
+        var alldata = allList();
+        var data= allList();
+        var lastStop= document.getElementById('endAddress').value;
+        if (lastStop == '131 Martinsville Rd, Basking Ridge, NJ 07920')
+        {
+        	data= alldata[1];
+        }
+        else if (lastStop == '50 Country Day Dr, Short Hills, NJ 07078')
+        {
+        	data=alldata[0];
+        }
+        console.log(data);
         var name = document.getElementById('startAddress').value;  
         
         var correspondingAddress = 0;
@@ -1329,10 +1342,12 @@
         		allStops.push(data[1][i]);
         	}
         }
-        
+       
         var allTimes = [];
         var revisedStops = [];
-        for (var j = 0; j<allStops.length; j++) {
+        for (var j = 0; j<allStops.length; j++)
+        {
+        
         	sleepFor(8000);
         	directionsService.route({
 			  origin: start,
@@ -1355,13 +1370,17 @@
             		summaryPanel.innerHTML += "Finish:" + '<br>' + document.getElementById('endAddress').value + '<br>';
             		summaryPanel.innerHTML += "Total Time For Shortest Route:" + '<br>' + Math.round(allTimes[bestMatchID]) + " Minutes";
 				}
-			  } else {
+			  } 
+			  else 
+			  {
 				console.log(status + " create directions");
 				window.alert('Directions request failed due to ' + status);
-				}
+			  }
+			  
 			}); 
+			
         }
-        */
+        
     }
     
     </script>
